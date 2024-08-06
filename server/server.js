@@ -80,7 +80,7 @@ wss.on('connection', (ws) => {
 // CORS 설정
 app.use(cors({
   origin: [
-    'https://ebook-viewer-pi.vercel.app',
+    'https://ebook-viewer-pi.vercel.app', 
     'http://localhost:3000',
     'http://localhost:5001',
     'https://ebookviewer-production.up.railway.app'

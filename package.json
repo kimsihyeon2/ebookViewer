@@ -25,11 +25,12 @@
     "react-scripts": "^5.0.1",
     "react-swipeable": "^7.0.1",
     "react-zoom-pan-pinch": "^3.6.1",
+    "serve": "^14.2.0",
     "web-vitals": "^2.1.4",
     "ws": "^8.18.0"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "serve -s build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -67,6 +68,5 @@
     "@babel/preset-env": "^7.24.8",
     "@babel/preset-react": "^7.24.7",
     "postcss-preset-env": "^9.6.0"
-  },
-  "proxy": "http://localhost:5001"
+  }
 }
