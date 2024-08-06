@@ -88,6 +88,8 @@ app.use(cors({
   credentials: true,
 }));
 
+app.options('*', cors()); // Preflight 요청 처리
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

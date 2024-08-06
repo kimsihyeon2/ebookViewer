@@ -1,4 +1,3 @@
-// src/contexts/BookContext.js
 import React, { createContext, useState, useContext, useCallback, useMemo } from 'react';
 import { getAllBooks, getPublicBooks, getBookInfo } from '../api';
 
