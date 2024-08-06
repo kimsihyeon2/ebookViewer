@@ -79,7 +79,7 @@ wss.on('connection', (ws) => {
 
 // CORS 설정
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:5001', 'http://localhost:5002','https://ebook-viewer-pi.vercel.app'],
+  origin: ['https://ebook-viewer-pi.vercel.app', 'http://localhost:3000'],
   credentials: true,
 }));
 
@@ -195,6 +195,7 @@ app.get('/book/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
+    // ObjectId 유효성 검사
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid book ID format' });
     }
@@ -212,16 +213,10 @@ app.get('/book/:id', authenticateToken, async (req, res) => {
 
 app.post('/upload-book', authenticateToken, upload.single('file'), async (req, res) => {
   try {
-    console.log('Upload book route hit');
-    console.log('Request body:', req.body);
-    console.log('File:', req.file);
-
     const { title, author, isSample } = req.body;
     const file = req.file;
 
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
+    if (!file) return res.status(400).json({ error: '업로드된 파일이 없습니다.' });
 
     const newBook = {
       title,
@@ -231,15 +226,9 @@ app.post('/upload-book', authenticateToken, upload.single('file'), async (req, r
     };
 
     const result = await db.collection('books').insertOne(newBook);
-    const insertedBook = result.ops ? result.ops[0] : { ...newBook, _id: result.insertedId };
-    res.status(201).json({ message: 'Book uploaded successfully', book: insertedBook });
+    res.status(201).json({ message: '책이 성공적으로 업로드되었습니다.', book: result.ops[0] });
   } catch (error) {
-    console.error('Error uploading book:', error);
-    res.status(500).json({ 
-      error: '책 업로드 중 오류가 발생했습니다.', 
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ error: '책 업로드 중 오류가 발생했습니다.' });
   }
 });
 
@@ -374,17 +363,6 @@ app.get('/api/status', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/coupons', authenticateToken, checkAdminAuth, async (req, res) => {
-  try {
-    const coupons = await db.collection('coupons').find().toArray();
-    console.log('Sending coupons:', coupons); // 로깅 추가
-    res.json(coupons);
-  } catch (error) {
-    console.error('Error fetching coupons:', error);
-    res.status(500).json({ error: 'Failed to fetch coupons', details: error.message });
-  }
-});
-
 // React 앱을 위한 catch-all 라우트
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
@@ -392,7 +370,7 @@ app.get('*', (req, res) => {
 
 // 서버 시작
 connectToDatabase().then(() => {
-  server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  server.listen(PORT, () => console.log(`Server running on port ${PORT}`)); // app.listen을 server.listen으로 변경
 }).catch(console.error);
 
 // 서버 종료 시 DB 연결 종료
