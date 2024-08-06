@@ -80,13 +80,14 @@ wss.on('connection', (ws) => {
 // CORS 설정
 app.use(cors({
   origin: [
-    'https://ebook-viewer-pi.vercel.app', 
+    'https://ebook-viewer-pi.vercel.app',
     'http://localhost:3000',
     'http://localhost:5001',
     'https://ebookviewer-production.up.railway.app'
   ],
   credentials: true,
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
