@@ -12,8 +12,8 @@ const WebSocket = require('ws');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const server = http.createServer(app); // HTTP 서버 생성
-const wss = new WebSocket.Server({ server }); // WebSocket 서버 생성
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -83,10 +83,11 @@ app.use(cors({
     'https://ebook-viewer-pi.vercel.app', 
     'http://localhost:3000',
     'http://localhost:5001',
-    'https://your-railway-app-url.railway.app'
+    'https://ebookviewer-production.up.railway.app'
   ],
   credentials: true,
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
