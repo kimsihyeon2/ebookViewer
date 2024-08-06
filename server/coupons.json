@@ -1,0 +1,47 @@
+{
+  "PREM-9F4FE71F01ED": {
+    "code": "PREM-9F4FE71F01ED",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-5DF4083828F5": {
+    "code": "PREM-5DF4083828F5",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-36F41294E58B": {
+    "code": "PREM-36F41294E58B",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-C693825BB1F8": {
+    "code": "PREM-C693825BB1F8",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-1E4C7E8EEC38": {
+    "code": "PREM-1E4C7E8EEC38",
+    "used": true,
+    "durationDays": 30
+  },
+  "PREM-343B11916DF7": {
+    "code": "PREM-343B11916DF7",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-5623206099AF": {
+    "code": "PREM-5623206099AF",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-57D28EB18119": {
+    "code": "PREM-57D28EB18119",
+    "used": false,
+    "durationDays": 30
+  },
+  "PREM-8418B8B8D185": {
+    "code": "PREM-8418B8B8D185",
+    "used": false,
+    "durationDays": 30
+  }
+}

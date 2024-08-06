@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "title": "Sample PDF",
+    "author": "Mozilla",
+    "file": "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
+    "isPremium": false
+  },
+  {
+    "id": 2,
+    "title": "학습과 기억의 뇌파",
+    "author": "Test Author 2",
+    "file": "/Electroencephalography of Learning and Memory.pdf",
+    "isPremium": true
+  },
+  {
+    "id": 1722610969237,
+    "title": "학술활동",
+    "author": "김시현",
+    "file": "http://localhost:5000/uploads/1722610969225.pdf",
+    "isPremium": true
+  },
+  {
+    "id": 1722666515140,
+    "title": "과제",
+    "author": "김시현",
+    "file": "http://localhost:5000/uploads/1722666515137.pdf",
+    "isPremium": false
+  }
+]

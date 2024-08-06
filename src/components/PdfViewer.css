@@ -1,0 +1,97 @@
+.pdf-viewer {
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 20px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.control-button {
+  cursor: pointer;
+  padding: 10px 15px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.control-button:hover {
+  background-color: #357abd;
+}
+
+.control-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  margin: 0 10px;
+}
+
+@media (max-width: 767px) {
+  .pdf-viewer {
+    padding: 10px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .control-button {
+    margin: 5px 0;
+    padding: 12px 15px;
+    font-size: 16px;
+  }
+
+  .page-info {
+    text-align: center;
+    margin: 10px 0;
+  }
+}
+
+/* 추가적인 반응형 스타일 */
+@media (max-width: 480px) {
+  .pdf-viewer {
+    padding: 5px;
+  }
+
+  .control-button {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+/* 확대/축소 애니메이션 */
+.pdf-page {
+  transition: transform 0.3s ease;
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .pdf-viewer {
+    background-color: #2c2c2c;
+    color: #ffffff;
+  }
+
+  .control-button {
+    background-color: #5a5a5a;
+  }
+
+  .control-button:hover {
+    background-color: #4a4a4a;
+  }
+}

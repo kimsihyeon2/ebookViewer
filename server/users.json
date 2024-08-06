@@ -1,0 +1,18 @@
+[
+  {
+    "username": "admin",
+    "password": "admin",
+    "email": "admin@example.com",
+    "isPremium": true,
+    "premiumExpiryDate": null,
+    "isAdmin": true
+  },
+  {
+    "username": "kimsi539816",
+    "email": "kimsi539816@gmail.com",
+    "password": "ksh55339988@",
+    "isPremium": false,
+    "premiumExpiryDate": null,
+    "isAdmin": false
+  }
+]
