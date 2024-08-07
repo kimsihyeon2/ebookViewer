@@ -26,6 +26,7 @@ const isTokenExpired = (token) => {
   }
 };
 
+// Refresh token 로직 수정
 export const refreshAccessToken = async () => {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
@@ -37,6 +38,7 @@ export const refreshAccessToken = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
+      credentials: 'include'
     });
 
     if (!response.ok) {
@@ -53,6 +55,7 @@ export const refreshAccessToken = async () => {
   }
 };
 
+// 오류 처리 개선
 const handleResponse = async (response) => {
   const contentType = response.headers.get("content-type");
   console.log('Response content type:', contentType);
@@ -62,13 +65,9 @@ const handleResponse = async (response) => {
     let errorMessage = `HTTP error! status: ${response.status}`;
     let errorDetails = {};
     try {
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-        errorDetails = errorData.details || {};
-      } else {
-        errorMessage = await response.text();
-      }
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+      errorDetails = errorData.details || {};
     } catch (e) {
       console.error('Error parsing error response:', e);
     }
@@ -76,15 +75,7 @@ const handleResponse = async (response) => {
     throw new Error(errorMessage, { cause: errorDetails });
   }
 
-  let responseData;
-  try {
-    responseData = contentType && contentType.includes("application/json") ? await response.json() : await response.text();
-  } catch (e) {
-    console.error('Error parsing response:', e);
-    throw new Error('Failed to parse server response');
-  }
-  console.log('Response data:', responseData);
-  return responseData;
+  return contentType && contentType.includes("application/json") ? await response.json() : await response.text();
 };
 
 export const authFetch = async (url, options = {}) => {
@@ -142,6 +133,7 @@ export const authFetch = async (url, options = {}) => {
   }
 };
 
+// Login 함수 수정
 export const login = async (credentials) => {
   try {
     const response = await fetch(`${BASE_URL}/login`, {
@@ -149,13 +141,12 @@ export const login = async (credentials) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
       credentials: 'include'
-    })
+    });
 
     const data = await handleResponse(response);
     console.log('Login response:', data);
     
     if (data.token && data.refreshToken) {
-      // URL 디코딩된 사용자 이름을 저장
       const decodedToken = JSON.parse(atob(data.token.split('.')[1]));
       const decodedUsername = decodeURIComponent(decodedToken.username);
       
@@ -165,6 +156,7 @@ export const login = async (credentials) => {
       console.log('Tokens stored');
     } else {
       console.error('No tokens received in login response');
+      throw new Error('Authentication failed');
     }
     
     return data;

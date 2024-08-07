@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5001;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // MongoDB 연결
 const uri = process.env.MONGODB_URI;
@@ -81,9 +81,8 @@ wss.on('connection', (ws) => {
 app.use(cors({
   origin: [
     'https://ebook-viewer-pi.vercel.app', 
-    'http://localhost:3000',
-    'http://localhost:5001',
-    'https://ebookviewer-production.up.railway.app'
+    'https://ebook-viewer-q2xalkshi-action-lions-projects.vercel.app',
+    'http://localhost:3000'
   ],
   credentials: true,
 }));
@@ -100,8 +99,48 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'uploads/')),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
-const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
+// Refresh Token 엔드포인트 추가
+app.post('/refresh-token', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+    const user = await db.collection('users').findOne({ username: decoded.username });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const token = jwt.sign(
+      { username: encodeURIComponent(user.username), isAdmin: user.isAdmin },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token });
+  } catch (error) {
+    res.status(403).json({ error: 'Invalid refresh token' });
+  }
+});
+
+// 파일 업로드 보안 강화
+const upload = multer({ 
+  storage: storage, 
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['application/pdf', 'application/epub+zip'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      const error = new Error('Invalid file type');
+      error.code = 'INVALID_FILE_TYPE';
+      return cb(error, false);
+    }
+    cb(null, true);
+  }
+});
 // JWT 설정
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
@@ -125,6 +164,22 @@ const authenticateToken = async (req, res, next) => {
     return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
   }
 };
+
+// Public Books 엔드포인트 추가
+app.get('/public-books', async (req, res) => {
+  try {
+    const publicBooks = await db.collection('books').find({ isPremium: false }).toArray();
+    res.json(publicBooks);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch public books' });
+  }
+});
+
+// 오류 처리 미들웨어 추가
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong', details: err.message });
+});
 
 // 관리자 권한 확인 미들웨어
 const checkAdminAuth = (req, res, next) => {
