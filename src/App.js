@@ -13,6 +13,7 @@ import CouponManagement from './components/CouponManagement';
 import UserManagement from './components/UserManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 import AdminDashboard from './components/AdminDashboard';
+import { Analytics } from '@vercel/analytics/react';
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
         <BookProvider>
           <Router>
             <AppContent />
+            <Analytics />
           </Router>
         </BookProvider>
       </UserProvider>
