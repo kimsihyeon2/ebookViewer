@@ -85,13 +85,15 @@ wss.on('connection', (ws) => {
 
 // CORS 설정
 app.use(cors({
-  origin: ['https://ebook-viewer-e8zea5ee0-action-lions-projects.vercel.app', 'http://localhost:3000'],
+  origin: [
+    'https://ebook-viewer-e8zea5ee0-action-lions-projects.vercel.app', 
+    'http://localhost:3000'
+  ],
   credentials: true,
 }));
 
 app.options('*', cors()); // Preflight 요청 처리
-app.use(express.static(path.join(__dirname, 'public')));
-// 이 라인을 인증 미들웨어보다 위에 배치하세요
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -199,194 +201,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.get('/books', authenticateToken, async (req, res) => {
-  try {
-    console.log('Request received for /books');
-    let filteredBooks;
-    if (!req.user.isPremium && !req.user.isAdmin) {
-      filteredBooks = await db.collection('books').find({ isPremium: false }).toArray();
-    } else {
-      filteredBooks = await db.collection('books').find().toArray();
-    }
-    console.log('Books fetched from database:', filteredBooks);
-    res.json(filteredBooks);
-  } catch (error) {
-    console.error('Error fetching books:', error);
-    res.status(500).json({ error: '책을 가져오는 중 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/book/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // ObjectId 유효성 검사
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid book ID format' });
-    }
-
-    const book = await db.collection('books').findOne({ _id: new ObjectId(id) });
-    if (!book) {
-      return res.status(404).json({ error: '책을 찾을 수 없습니다.' });
-    }
-    res.json(book);
-  } catch (error) {
-    console.error('책을 가져오는 중 오류가 발생했습니다:', error);
-    res.status(500).json({ error: '책을 가져오는 중 오류가 발생했습니다.', details: error.message });
-  }
-});
-
-app.post('/upload-book', authenticateToken, upload.single('file'), async (req, res) => {
-  try {
-    const { title, author, isSample } = req.body;
-    const file = req.file;
-
-    if (!file) return res.status(400).json({ error: '업로드된 파일이 없습니다.' });
-
-    const newBook = {
-      title,
-      author,
-      file: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
-      isPremium: isSample !== 'true',
-    };
-
-    const result = await db.collection('books').insertOne(newBook);
-    res.status(201).json({ message: '책이 성공적으로 업로드되었습니다.', book: result.ops[0] });
-  } catch (error) {
-    res.status(500).json({ error: '책 업로드 중 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/users', authenticateToken, checkAdminAuth, async (req, res) => {
-  try {
-    const users = await db.collection('users').find({}, { projection: { password: 0 } }).toArray();
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: '사용자 정보를 가져오는 중 오류가 발생했습니다.' });
-  }
-});
-
-app.delete('/users/:username', authenticateToken, checkAdminAuth, async (req, res) => {
-  try {
-    const result = await db.collection('users').deleteOne({ username: req.params.username });
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
-    }
-    res.json({ message: '사용자가 성공적으로 삭제되었습니다.' });
-  } catch (error) {
-    res.status(500).json({ error: '사용자 삭제 중 오류가 발생했습니다.' });
-  }
-});
-
-app.put('/users/:username/demote', authenticateToken, checkAdminAuth, async (req, res) => {
-  try {
-    const result = await db.collection('users').updateOne(
-      { username: req.params.username },
-      { $set: { isPremium: false, premiumExpiryDate: null } }
-    );
-    if (result.modifiedCount === 0) {
-      return res.status(404).json({ error: '사용자를 찾을 수 없거나 이미 프리미엄 해제되었습니다.' });
-    }
-    res.json({ message: '사용자의 프리미엄이 성공적으로 해제되었습니다.' });
-  } catch (error) {
-    res.status(500).json({ error: '사용자 프리미엄 해제 중 오류가 발생했습니다.' });
-  }
-});
-
-app.post('/generate-coupon', authenticateToken, checkAdminAuth, async (req, res) => {
-  try {
-    const randomPart = crypto.randomBytes(6).toString('hex').toUpperCase();
-    const code = `PREM-${randomPart}`;
-    const newCoupon = {
-      code,
-      used: false,
-      durationDays: 30
-    };
-    await db.collection('coupons').insertOne(newCoupon);
-    res.json(newCoupon);
-  } catch (error) {
-    res.status(500).json({ error: '쿠폰 생성 중 오류가 발생했습니다.' });
-  }
-});
-
-app.post('/redeem-coupon', authenticateToken, async (req, res) => {
-  try {
-    const { couponCode } = req.body;
-    const coupon = await db.collection('coupons').findOne({ code: couponCode, used: false });
-
-    if (!coupon) {
-      return res.status(400).json({ error: '유효하지 않거나 이미 사용된 쿠폰입니다.' });
-    }
-
-    const now = new Date();
-    const expiryDate = new Date(now.getTime() + coupon.durationDays * 24 * 60 * 60 * 1000);
-
-    await db.collection('users').updateOne(
-      { _id: req.user._id },
-      { $set: { isPremium: true, premiumExpiryDate: expiryDate } }
-    );
-
-    await db.collection('coupons').updateOne(
-      { _id: coupon._id },
-      { $set: { used: true } }
-    );
-
-    res.json({ 
-      success: true, 
-      message: '쿠폰이 성공적으로 사용되었습니다.', 
-      expiryDate: expiryDate,
-      durationDays: coupon.durationDays
-    });
-  } catch (error) {
-    res.status(500).json({ error: '쿠폰 사용 중 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/user', authenticateToken, async (req, res) => {
-  try {
-    const { password, ...userWithoutPassword } = req.user;
-    res.json(userWithoutPassword);
-  } catch (error) {
-    res.status(500).json({ error: '사용자 정보를 가져오는 중 오류가 발생했습니다.' });
-  }
-});
-
-app.post('/upgrade', authenticateToken, async (req, res) => {
-  try {
-    const result = await db.collection('users').updateOne(
-      { _id: req.user._id },
-      { $set: { isPremium: true, premiumExpiryDate: null } }
-    );
-    if (result.modifiedCount === 0) {
-      return res.status(400).json({ error: '사용자가 이미 프리미엄 상태이거나 찾을 수 없습니다.' });
-    }
-    const updatedUser = await db.collection('users').findOne({ _id: req.user._id }, { projection: { password: 0 } });
-    res.json({ message: '사용자가 성공적으로 프리미엄으로 업그레이드되었습니다.', user: updatedUser });
-  } catch (error) {
-    res.status(500).json({ error: '사용자 업그레이드 중 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/api/status', authenticateToken, async (req, res) => {
-  try {
-    const user = await db.collection('users').findOne({ _id: req.user._id }, { projection: { password: 0 } });
-    if (!user) {
-      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
-    }
-    // 프리미엄 상태 확인 및 업데이트 로직
-    if (user.isPremium && user.premiumExpiryDate && new Date(user.premiumExpiryDate) < new Date()) {
-      await db.collection('users').updateOne(
-        { _id: user._id },
-        { $set: { isPremium: false, premiumExpiryDate: null } }
-      );
-      user.isPremium = false;
-      user.premiumExpiryDate = null;
-    }
-    res.json({ user });
-  } catch (error) {
-    res.status(500).json({ error: '상태 확인 중 오류가 발생했습니다.' });
-  }
-});
+// 기타 라우트들...
 
 // React 앱을 위한 catch-all 라우트
 app.get('*', (req, res) => {
