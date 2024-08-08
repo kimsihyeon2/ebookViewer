@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 
 const API_URL = window.ENV.REACT_APP_API_URL;
 
-
 const CouponManagement = ({ user }) => {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +28,12 @@ const CouponManagement = ({ user }) => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (user && user.isAdmin) {
+      fetchCoupons();
+    }
+  }, [user, fetchCoupons]);
 
   const handleGenerateNewCoupon = async () => {
     if (!user.isAdmin) {
