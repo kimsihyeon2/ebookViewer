@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { uploadBook } from '../api';
 import { useBooks } from '../contexts/BookContext';
+
+const API_URL = window.ENV.REACT_APP_API_URL;
 
 const BookUpload = () => {
   const [file, setFile] = useState(null);
@@ -23,8 +24,19 @@ const BookUpload = () => {
     formData.append('isSample', isSample);
   
     try {
-      const newBook = await uploadBook(formData);
-      addBook(newBook);  // 여기에서 addBook 함수를 사용
+      const response = await fetch(`${API_URL}/upload-book`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload book');
+      }
+      const newBook = await response.json();
+      addBook(newBook);
       alert('책이 성공적으로 업로드되었습니다.');
       // 폼 초기화
       setFile(null);

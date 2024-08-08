@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signUp } from '../api';
 import { useUser } from '../contexts/UserContext';
+
+const API_URL = window.ENV.REACT_APP_API_URL;
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -18,10 +19,28 @@ const Signup = () => {
     setLoading(true);
     try {
       // 회원가입
-      await signUp({ username, email, password });
+      const signUpResponse = await fetch(`${API_URL}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password }),
+      });
+      if (!signUpResponse.ok) throw new Error('Failed to sign up');
       
       // 회원가입 성공 후 자동 로그인
-      await login({ username, password });
+      const loginResponse = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+        credentials: 'include'
+      });
+      if (!loginResponse.ok) throw new Error('Failed to log in after signup');
+      
+      const data = await loginResponse.json();
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+        // UserContext의 login 함수 호출
+        login(data.user);
+      }
       
       navigate('/');
     } catch (error) {

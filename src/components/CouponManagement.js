@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { getCoupons, generateNewCoupon } from '../api';
+
+const API_URL = window.ENV.REACT_APP_API_URL;
+
 
 const CouponManagement = ({ user }) => {
   const [coupons, setCoupons] = useState([]);
@@ -11,8 +13,14 @@ const CouponManagement = ({ user }) => {
     try {
       setLoading(true);
       setError(null);
-      const fetchedCoupons = await getCoupons();
-      console.log('Fetched coupons:', fetchedCoupons); // 로깅 추가
+      const response = await fetch(`${API_URL}/coupons`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch coupons');
+      const fetchedCoupons = await response.json();
+      console.log('Fetched coupons:', fetchedCoupons);
       setCoupons(fetchedCoupons);
     } catch (error) {
       console.error('Error fetching coupons:', error);
@@ -21,12 +29,6 @@ const CouponManagement = ({ user }) => {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (user && user.isAdmin) {
-      fetchCoupons();
-    }
-  }, [user, fetchCoupons]);
 
   const handleGenerateNewCoupon = async () => {
     if (!user.isAdmin) {
@@ -37,8 +39,15 @@ const CouponManagement = ({ user }) => {
     try {
       setGeneratingCoupon(true);
       setError(null);
-      const newCoupon = await generateNewCoupon();
-      console.log('New coupon generated:', newCoupon); // 로깅 추가
+      const response = await fetch(`${API_URL}/generate-coupon`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to generate coupon');
+      const newCoupon = await response.json();
+      console.log('New coupon generated:', newCoupon);
       setCoupons(prevCoupons => [...prevCoupons, newCoupon]);
     } catch (error) {
       console.error('Error generating new coupon:', error);
