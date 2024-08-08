@@ -125,6 +125,7 @@ export const authFetch = async (url, options = {}) => {
 
     return handleResponse(response);
   } catch (error) {
+    console.error('Login request failed:', error);
     console.error('authFetch error:', error);
     if (error.message === 'Authentication required' || error.message === 'Failed to refresh token') {
       await logout();

@@ -9,13 +9,12 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const http = require('http');
 const WebSocket = require('ws');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // MongoDB 연결
 const uri = process.env.MONGODB_URI;
@@ -24,21 +23,20 @@ if (!uri) {
   process.exit(1);
 }
 
-// MongoDB 클라이언트 옵션
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  tls: true,
-  tlsAllowInvalidCertificates: true,
-});
+// MongoDB 연결 옵션
+const mongoOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4
+};
 
 let db;
 
 async function connectToDatabase() {
   try {
+    const client = new MongoClient(uri, mongoOptions);
     await client.connect();
     console.log("MongoDB Atlas에 연결되었습니다.");
     db = client.db("ebookviewer");
@@ -57,9 +55,17 @@ async function connectToDatabase() {
       });
       console.log('초기 관리자 계정이 생성되었습니다.');
     }
+
+    // 연결 모니터링
+    client.on('close', () => {
+      console.log('MongoDB 연결이 닫혔습니다. 재연결 시도 중...');
+      setTimeout(connectToDatabase, 5000);
+    });
+
+    return client;
   } catch (e) {
     console.error("데이터베이스 연결 오류:", e);
-    process.exit(1);
+    setTimeout(connectToDatabase, 5000);
   }
 }
 
@@ -79,16 +85,13 @@ wss.on('connection', (ws) => {
 
 // CORS 설정
 app.use(cors({
-  origin: [
-    'https://ebook-viewer-pi.vercel.app', 
-    'https://ebook-viewer-q2xalkshi-action-lions-projects.vercel.app',
-    'http://localhost:3000'
-  ],
+  origin: ['https://ebook-viewer-e8zea5ee0-action-lions-projects.vercel.app', 'http://localhost:3000'],
   credentials: true,
 }));
 
 app.options('*', cors()); // Preflight 요청 처리
-
+app.use(express.static(path.join(__dirname, 'public')));
+// 이 라인을 인증 미들웨어보다 위에 배치하세요
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -98,33 +101,6 @@ app.use(express.static(path.join(__dirname, '..', 'build')));
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'uploads/')),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-
-// Refresh Token 엔드포인트 추가
-app.post('/refresh-token', async (req, res) => {
-  const { refreshToken } = req.body;
-  if (!refreshToken) {
-    return res.status(400).json({ error: 'Refresh token is required' });
-  }
-
-  try {
-    const decoded = jwt.verify(refreshToken, JWT_SECRET);
-    const user = await db.collection('users').findOne({ username: decoded.username });
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const token = jwt.sign(
-      { username: encodeURIComponent(user.username), isAdmin: user.isAdmin },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ token });
-  } catch (error) {
-    res.status(403).json({ error: 'Invalid refresh token' });
-  }
 });
 
 // 파일 업로드 보안 강화
@@ -141,6 +117,7 @@ const upload = multer({
     cb(null, true);
   }
 });
+
 // JWT 설정
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
@@ -164,22 +141,6 @@ const authenticateToken = async (req, res, next) => {
     return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
   }
 };
-
-// Public Books 엔드포인트 추가
-app.get('/public-books', async (req, res) => {
-  try {
-    const publicBooks = await db.collection('books').find({ isPremium: false }).toArray();
-    res.json(publicBooks);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch public books' });
-  }
-});
-
-// 오류 처리 미들웨어 추가
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong', details: err.message });
-});
 
 // 관리자 권한 확인 미들웨어
 const checkAdminAuth = (req, res, next) => {
@@ -207,6 +168,7 @@ app.post('/signup', async (req, res) => {
     await db.collection('users').insertOne(newUser);
     res.json({ message: '사용자가 성공적으로 생성되었습니다.', user: { ...newUser, password: undefined } });
   } catch (error) {
+    console.error('사용자 생성 중 오류:', error);
     res.status(500).json({ error: '사용자 생성 중 오류가 발생했습니다.' });
   }
 });
@@ -232,6 +194,7 @@ app.post('/login', async (req, res) => {
       res.status(401).json({ error: '잘못된 자격 증명입니다.' });
     }
   } catch (error) {
+    console.error('로그인 오류:', error);
     res.status(500).json({ error: '로그인 오류가 발생했습니다.' });
   }
 });
@@ -430,14 +393,38 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
 });
 
-// 서버 시작
-connectToDatabase().then(() => {
-  server.listen(PORT, () => console.log(`Server running on port ${PORT}`)); // app.listen을 server.listen으로 변경
-}).catch(console.error);
-
-// 서버 종료 시 DB 연결 종료
-process.on('SIGINT', async () => {
-  await client.close();
-  console.log('데이터베이스 연결이 종료되었습니다.');
-  process.exit(0);
+// 오류 처리 미들웨어
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong', details: err.message });
 });
+
+// 처리되지 않은 예외 처리
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // 여기에 에러 로깅 로직 추가
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // 여기에 에러 로깅 로직 추가
+});
+
+// 서버 시작
+connectToDatabase()
+  .then((client) => {
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+    // 종료 시 정리
+    process.on('SIGINT', async () => {
+      await client.close();
+      console.log('MongoDB 연결이 종료되었습니다.');
+      process.exit(0);
+    });
+  })
+  .catch((error) => {
+    console.error('서버 시작 실패:', error);
+    process.exit(1);
+  });
