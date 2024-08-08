@@ -1,0 +1,13 @@
+{
+    "routes": [
+      { "src": "/manifest.json", "dest": "/manifest.json" }
+    ],
+    "build": {
+      "env": {
+        "NPM_FLAGS": "--prefer-offline"
+      }
+    },
+    "env": {
+      "REACT_APP_API_URL": "https://ebookviewer-production.up.railway.app"
+    }
+  }
