@@ -7,7 +7,7 @@ const Login = ({ setUser }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login: contextLogin } = useUser();
+  const { login} = useUser();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
