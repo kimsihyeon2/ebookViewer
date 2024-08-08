@@ -16,13 +16,24 @@ const Login = ({ setUser }) => {
     setLoading(true);
     try {
       console.log('Attempting login with:', { username, password: '****' });
-      const user = await contextLogin({ username, password });
-      console.log('Login successful:', user);
-      setUser(user);
+      const response = await fetch(`${window.ENV?.REACT_APP_API_URL || 'https://ebookviewer-production.up.railway.app'}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      const data = await response.json();
+      console.log('Login successful:', data);
+      setUser(data.user);
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('refresh_token', data.refreshToken);
       navigate('/');
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message || 'Failed to login. Please check your credentials and try again.');
+      setError('Failed to login. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }

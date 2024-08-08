@@ -1,6 +1,6 @@
 {
     "routes": [
-      { "src": "/manifest.json", "dest": "/public/manifest.json" },
+      { "src": "/manifest.json", "dest": "/manifest.json" },
       { "src": "/(.*)", "dest": "/index.html" }
     ],
     "build": {
@@ -9,7 +9,7 @@
       }
     },
     "env": {
-      "REACT_APP_API_URL": "https://ebookviewer-production.up.railway.app"
-    }
+    "REACT_APP_API_URL": "https://ebookviewer-production.up.railway.app",
+    "JWT_SECRET": "P8zs7X1qA3mF5vN9cR2bE4tG6yH8uJ0wL2xD4fC6vB8nM0qS3aZ5xK7pT9rY"
   }
-  
+}
