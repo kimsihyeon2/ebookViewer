@@ -44,14 +44,18 @@ export const UserProvider = ({ children }) => {
     try {
       const response = await apiLogin(credentials);
       console.log('Login response:', response);
-      setUser(response.user);
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('refresh_token', response.refreshToken);
-      localStorage.setItem('username', response.user.username);
-      return response.user;
+      if (response.token && response.refreshToken) {
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('refresh_token', response.refreshToken);
+        localStorage.setItem('username', response.user.username);
+        setUser(response.user);
+        return response.user;
+      } else {
+        throw new Error('Invalid login response');
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Login failed: ' + error.message);
+      setError('Login failed: ' + (error.message || 'Unknown error'));
       throw error;
     } finally {
       setIsLoading(false);

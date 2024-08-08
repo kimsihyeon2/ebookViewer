@@ -85,11 +85,10 @@ wss.on('connection', (ws) => {
 
 // CORS 설정
 app.use(cors({
-  origin: [
-    'https://ebook-viewer-e8zea5ee0-action-lions-projects.vercel.app', 
-    'http://localhost:3000'
-  ],
+  origin: ['https://ebook-viewer-e8zea5ee0-action-lions-projects.vercel.app', 'http://localhost:3000'],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.options('*', cors()); // Preflight 요청 처리

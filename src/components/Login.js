@@ -22,7 +22,7 @@ const Login = ({ setUser }) => {
       navigate('/');
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message || 'Failed to login. Please try again.');
+      setError(error.message || 'Failed to login. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
